@@ -11,7 +11,7 @@ const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 30000,
   headers: {
-    "Content-Type": "application/json"
+    
   }
 });
 
@@ -32,6 +32,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => {
     isLoading.value = false;
+    apiError.value = null;
+    
+    // Set Content-Type for non-FormData requests
+    if (!(response.data instanceof FormData)) {
+      response.headers["Content-Type"] = "application/json";
+    }
     return response;
   },
   (error) => {
@@ -42,6 +48,8 @@ apiClient.interceptors.response.use(
       const status = error.response.status;
       const data = error.response.data;
 
+      console.error("🔴 API Error:", data);
+
       switch (status) {
         case 400:
           apiError.value = data.detail || "Invalid request";
@@ -51,6 +59,13 @@ apiClient.interceptors.response.use(
           break;
         case 409:
           apiError.value = "Conflict - resource already exists";
+          break;
+        case 422:
+          // Unpack validation error
+          if (data.detail) {
+            console.error("Validation error:", data.detail);  // ← ADD THIS
+            apiError.value = JSON.stringify(data.detail);
+          }
           break;
         case 500:
           apiError.value = "Server error - please try again later";
@@ -143,11 +158,7 @@ const uploadFile = async (url, file, additionalData = {}, onProgress = null) => 
       if (value) formData.append(key, value);
     });
 
-    const config = {
-      headers: {
-        "Content-Type": "multipart/form-data"
-      }
-    };
+    const config = {};  
 
     if (onProgress) {
       config.onUploadProgress = (progressEvent) => {

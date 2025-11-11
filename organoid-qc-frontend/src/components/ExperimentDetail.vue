@@ -7,6 +7,8 @@ import BatchReport from "./BatchReport.vue";
 import ImagesTable from "./ImagesTable.vue";
 import ActionButtons from "./ActionButtons.vue";
 
+const activeTab = ref("upload");
+
 const props = defineProps({
   experiment: { type: Object, required: true },
   batchReport: { type: Object, default: null },
@@ -91,6 +93,7 @@ const handleDownloadScript = async () => {
       `✓ Script downloaded!\n\nML-Ready: ${data.ml_ready_count}/${data.total_count}\n\nInstructions:\n1. Save the script\n2. Run: python3 ${data.filename}\n3. Enter your images directory path\n4. Images will be copied to ml_ready_images/`
     );
   } catch (e) {
+    console.error("❌ Error generating script:", e);
     alert("Error generating script");
   }
 };
@@ -118,24 +121,30 @@ const handleDelete = async () => {
   <section class="card experiment-detail">
     <h2>{{ experiment.name }}</h2>
 
-    <UploadSection :uploading="uploading" @upload="handleUpload" />
+    <div class="tabs">
+      <button 
+        @click="activeTab = 'upload'"
+        :class="{ active: activeTab === 'upload' }"
+      >
+        📤 Upload
+      </button>
 
-    <ThresholdControls 
-      :thresholds="thresholds" 
-      @update="updateThresholds" 
-    />
+    </div>
 
-    <BatchReport :report="batchReport" />
+    <div v-if="activeTab === 'upload'">
+      <UploadSection :uploading="uploading" @upload="handleUpload" />
+      <ThresholdControls :thresholds="thresholds" @update="updateThresholds" />
+      <BatchReport :report="batchReport" />
+      <ImagesTable :images="images" :thresholds="thresholds" />
+      <ActionButtons
+        :ml-ready-count="batchReport?.ml_ready_images || 0"
+        @export-ml-ready="handleExportMlReady"
+        @download-script="handleDownloadScript"
+        @export-all="handleExportFull"
+        @delete="handleDelete"
+      />
+    </div>
 
-    <ImagesTable :images="images" :thresholds="thresholds" />
-
-    <ActionButtons
-      :ml-ready-count="batchReport?.ml_ready_images || 0"
-      @export-ml-ready="handleExportMlReady"
-      @download-script="handleDownloadScript"
-      @export-all="handleExportFull"
-      @delete="handleDelete"
-    />
   </section>
 </template>
 
@@ -143,5 +152,32 @@ const handleDelete = async () => {
 .experiment-detail {
   display: flex;
   flex-direction: column;
+}
+
+.tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.tabs button {
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.tabs button.active {
+  color: #0066cc;
+  border-bottom-color: #0066cc;
+}
+
+.tabs button:hover {
+  color: #0066cc;
 }
 </style>

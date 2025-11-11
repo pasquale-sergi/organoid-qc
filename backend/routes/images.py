@@ -25,6 +25,10 @@ async def upload_img(
     db: Session = Depends(get_db)
 ):
     """Upload and process microscopy image"""
+    print(f"📨 Received file: {file.filename}")  
+    print(f"   Size: {file.size if file.size else 'unknown'}")
+    print(f"   Content-type: {file.content_type}")
+    
     if not file.filename.lower().endswith(ALLOWED_FORMATS):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

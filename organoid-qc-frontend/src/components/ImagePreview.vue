@@ -22,17 +22,19 @@ const imageUrl = computed(() => {
   return `http://localhost:8000/images/${props.image.id}`;
 });
 
+const onImageLoad = () => {
+  loading.value = false;
+  if (loadTimeout.value) clearTimeout(loadTimeout.value);
+};
+
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     loading.value = true;
     imageError.value = false;
-    
-    // Timeout after 5 seconds
     loadTimeout.value = setTimeout(() => {
       if (loading.value) {
         loading.value = false;
         imageError.value = true;
-        console.warn("Image load timeout");
       }
     }, 5000);
   } else {
@@ -49,7 +51,6 @@ const onImageError = () => {
   loading.value = false;
   imageError.value = true;
   if (loadTimeout.value) clearTimeout(loadTimeout.value);
-  console.error("Failed to load image:", props.image.filename);
 };
 
 const getQuality = (value, type) => {
@@ -91,7 +92,7 @@ const getQuality = (value, type) => {
                 :src="imageUrl" 
                 class="preview-image"
                 :style="{ opacity: loading ? 0.5 : 1 }"  
-                @load="() => { loading = false; if (loadTimeout) clearTimeout(loadTimeout); }"
+                @load="() => { loading = false; if (loadTimeout.value) clearTimeout(loadTimeout.value); }"
                 @error="onImageError"
                 alt="Preview"
               />

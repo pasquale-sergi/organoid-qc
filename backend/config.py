@@ -5,7 +5,7 @@ UPLOAD_DIR = Path("./uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 # Image settings
-ALLOWED_FORMATS = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff')
+ALLOWED_FORMATS = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff','.tif')
 THUMBNAIL_SIZE = (200, 200)
 THUMBNAIL_QUALITY = 70
 

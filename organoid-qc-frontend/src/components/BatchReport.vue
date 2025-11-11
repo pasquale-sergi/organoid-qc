@@ -67,7 +67,9 @@ defineProps({
     type: Object,
     default: null
   }
+
 });
+
 </script>
 
 <style scoped>

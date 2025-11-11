@@ -205,3 +205,10 @@ if failed == 0:
 else:
     print(f"⚠ {{failed}} images could not be copied. Check paths and try again.")
 """
+    
+    return {
+        "script": script,
+        "ml_ready_count": len(ml_ready_files),
+        "total_count": len(images),
+        "filename": f"organize_ml_ready_{exp_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.py"
+    }
