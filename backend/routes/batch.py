@@ -117,24 +117,42 @@ def equipment_health(exp_id: int, db: Session = Depends(get_db)):
         SELECT microscope_id, focus_score, created_at
         FROM images
         WHERE experiment_id = :id
-        ORDER BY created_at ASC
+        ORDER BY microscope_id, created_at ASC
     """), {"id": exp_id}).fetchall()
     
-    if len(images) < 2:
-        return {
-            "status": "insufficient_data",
-            "total_images": len(images)
-        }
+    if not images:
+        return {"status": "no_data"}
     
-    # Calculate trend
-    focus_scores = [img.focus_score for img in images]
-    trend = (focus_scores[-1] - focus_scores[0]) / len(focus_scores)
+    # Group by microscope
+    microscopes = {}
+    for img in images:
+        if img.microscope_id not in microscopes:
+            microscopes[img.microscope_id] = []
+        microscopes[img.microscope_id].append(img.focus_score)
     
-    issues = detect_equipment_issues(images)
+    # Calculate trend for each microscope
+    results = {}
+    for micro_id, scores in microscopes.items():
+        if len(scores) < 2:
+            results[micro_id] = {"status": "insufficient_data", "total": len(scores)}
+        else:
+            trend = (scores[-1] - scores[0]) / len(scores)
+            issues = []
+            
+            if trend < -5:
+                issues.append("⚠️ Focus degradation detected")
+            
+            # Count low focus images
+            low_focus_count = sum(1 for s in scores if s < 50)
+            if low_focus_count > 0:
+                pct = round((low_focus_count / len(scores)) * 100, 1)
+                issues.append(f"⚠️ {low_focus_count}/{len(scores)} images have focus < 50 ({pct}%)")
+            
+            results[micro_id] = {
+                "microscope": micro_id,
+                "total_images": len(scores),
+                "focus_trend": round(trend, 2),
+                "issues": issues or ["✓ Normal"]
+            }
     
-    return {
-        "microscope": images[0].microscope_id if images else "unknown",
-        "total_images": len(images),
-        "focus_trend": round(trend, 2),
-        "issues": issues or ["✓ Equipment performing normally"]
-    }
+    return results

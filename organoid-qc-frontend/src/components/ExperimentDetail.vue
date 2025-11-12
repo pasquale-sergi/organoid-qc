@@ -1,12 +1,16 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { useExperiments } from "../composables/useExperiments";
 import UploadSection from "./UploadSection.vue";
 import ThresholdControls from "./ThresholdControls.vue";
 import BatchReport from "./BatchReport.vue";
 import ImagesTable from "./ImagesTable.vue";
 import ActionButtons from "./ActionButtons.vue";
+import EquipmentHealth from "./EquipmentHealth.vue";
+import { useApi } from "../composables/useApi";
 
+
+const {get} = useApi();
 const activeTab = ref("upload");
 
 const props = defineProps({
@@ -26,8 +30,14 @@ const {
   downloadScript,
   exportFull,
   batchReport: composableBatchReport,
-  images: composableImages
+  images: composableImages,
+  loadEquipmentHealth,
+  equipmentHealth
 } = useExperiments();
+
+watch(equipmentHealth, (newVal) => {
+  
+}, { deep: true });
 
 const uploading = ref(false);
 const thresholds = ref({
@@ -38,6 +48,10 @@ const thresholds = ref({
 });
 
 const handleUpload = async (files, metadata) => {
+  if (!metadata.session || !metadata.microscope) {
+    alert("Imaging Session ID and Microscope ID are required!");
+    return;
+  }
   uploading.value = true;
   try {
     await uploadImages(props.experiment.id, files, metadata);
@@ -54,6 +68,7 @@ const updateThresholds = async (newThresholds) => {
   try {
     await loadBatchReport(props.experiment.id, thresholds.value);
     await loadImages(props.experiment.id);
+    await loadEquipmentHealth(props.experiment.id);
     
     // Emit the values from composable
     emit("update-batch-report", composableBatchReport.value);
@@ -115,6 +130,13 @@ const handleDelete = async () => {
     alert("Error deleting experiment");
   }
 };
+
+
+onMounted(async () => {
+  await loadBatchReport(props.experiment.id, thresholds.value);
+  await loadImages(props.experiment.id);
+  await loadEquipmentHealth(props.experiment.id);
+});
 </script>
 
 <template>
@@ -132,10 +154,16 @@ const handleDelete = async () => {
     </div>
 
     <div v-if="activeTab === 'upload'">
-      <UploadSection :uploading="uploading" @upload="handleUpload" />
+      <UploadSection :uploading="uploading" :experiment-id="experiment.id" @upload="handleUpload" />
       <ThresholdControls :thresholds="thresholds" @update="updateThresholds" />
       <BatchReport :report="batchReport" />
       <ImagesTable :images="images" :thresholds="thresholds" />
+      <div class="equipment">
+        <EquipmentHealth v-if="equipmentHealth" :health="equipmentHealth" />
+
+      </div>
+
+     
       <ActionButtons
         :ml-ready-count="batchReport?.ml_ready_images || 0"
         @export-ml-ready="handleExportMlReady"
@@ -152,6 +180,11 @@ const handleDelete = async () => {
 .experiment-detail {
   display: flex;
   flex-direction: column;
+}
+
+.equipment{
+  margin-top: 10px-;
+  margin-bottom: 10px;
 }
 
 .tabs {

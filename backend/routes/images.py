@@ -1,4 +1,4 @@
-from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -19,9 +19,9 @@ router = APIRouter(tags=["images"])
 async def upload_img(
     experiment_id: int,
     file: UploadFile = File(...),
-    imaging_session_id: str = None,
-    microscope_id: str = None,
-    operator_id: str = None,
+    imaging_session_id: str = Form(...),  
+    microscope_id: str = Form(...),       
+    operator_id: str = Form(None),       
     db: Session = Depends(get_db)
 ):
     """Upload and process microscopy image"""
@@ -111,7 +111,7 @@ async def upload_img(
 @router.get("/images/{image_id}")
 def get_image(image_id: int, db: Session = Depends(get_db)):
     """Get full image as file"""
-    print(f"\n🔍 GET /images/{image_id} called")  # ← ADD THIS
+    print(f"\n🔍 GET /images/{image_id} called") 
     try:
         image = db.execute(
             text("SELECT file_path FROM images WHERE id = :id"),
@@ -119,18 +119,18 @@ def get_image(image_id: int, db: Session = Depends(get_db)):
         ).first()
         
         if not image or not image.file_path:
-            print(f"❌ Image {image_id} not found in DB")  # ← ADD THIS
+            print(f"❌ Image {image_id} not found in DB")  
             raise HTTPException(status_code=404, detail="Image not found")
         
         file_path = Path(image.file_path)
-        print(f"  DB path: {file_path}")  # ← ADD THIS
+        print(f"  DB path: {file_path}") 
         
         if not file_path.is_absolute():
             file_path = Path(__file__).parent.parent / file_path
         
         file_path = file_path.resolve()
-        print(f"  Resolved: {file_path}")  # ← ADD THIS
-        print(f"  Exists: {file_path.exists()}")  # ← ADD THIS
+        print(f"  Resolved: {file_path}")  
+        print(f"  Exists: {file_path.exists()}")  
         
         if not file_path.exists():
             print(f"✗ File not found at: {file_path}")

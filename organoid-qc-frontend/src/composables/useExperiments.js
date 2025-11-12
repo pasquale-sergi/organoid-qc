@@ -8,6 +8,7 @@ export function useExperiments() {
   const selectedExp = ref(null);
   const batchReport = ref(null);
   const images = ref([]);
+  const equipmentHealth = ref(null);
 
   const loadExperiments = async () => {
     try {
@@ -20,12 +21,14 @@ export function useExperiments() {
 
   const createExperiment = async (name) => {
     try {
-      await post("/experiments", { name });
+      const response = await post("/experiments", { name });
       await loadExperiments();
-      return true;
+      return { success: true };
     } catch (e) {
-      console.error("Failed to create experiment", e);
-      return false;
+      if (e.response?.status === 409 || e.response?.data?.detail?.includes("unique")) {
+        return { success: false, error: "Experiment name already exists" };
+      }
+      return { success: false, error: e.message };
     }
   };
 
@@ -33,6 +36,7 @@ export function useExperiments() {
     selectedExp.value = experiments.value.find((e) => e.id === expId);
     await loadBatchReport(expId);
     await loadImages(expId);
+    await loadEquipmentHealth(expId);
   };
 
   const loadBatchReport = async (expId, thresholds = {}) => {
@@ -61,6 +65,16 @@ export function useExperiments() {
     }
   };
 
+  const loadEquipmentHealth = async (expId) => {
+    try {
+      const data = await get(`/experiments/${expId}/equipment-health`);
+      equipmentHealth.value = data;
+      } catch (e) {
+      console.error("Failed to load equipment health", e);
+    }
+  };
+
+
   const uploadImages = async (expId, files, metadata) => {
     try {
       const { uploadFile } = useApi();
@@ -79,6 +93,7 @@ export function useExperiments() {
       
       await loadBatchReport(expId);
       await loadImages(expId);
+      await loadEquipmentHealth(expId);
       return true;
     } catch (e) {
       console.error("Failed to upload images", e);
@@ -154,6 +169,8 @@ export function useExperiments() {
     deleteExperiment,
     exportMlReady,
     downloadScript,
-    exportFull
+    exportFull,
+    loadEquipmentHealth,
+    equipmentHealth,
   };
 }

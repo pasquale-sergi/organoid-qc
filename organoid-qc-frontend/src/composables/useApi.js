@@ -1,7 +1,6 @@
 import axios from "axios";
 import { ref } from "vue";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
 // Global loading and error states
 const isLoading = ref(false);
 const apiError = ref(null);
@@ -153,12 +152,12 @@ const uploadFile = async (url, file, additionalData = {}, onProgress = null) => 
     const formData = new FormData();
     formData.append("file", file);
 
-    // Add additional form data
+    // Add additional form data - send all values, even empty strings
     Object.entries(additionalData).forEach(([key, value]) => {
-      if (value) formData.append(key, value);
+      formData.append(key, value || "");  
     });
 
-    const config = {};  
+    const config = {};
 
     if (onProgress) {
       config.onUploadProgress = (progressEvent) => {

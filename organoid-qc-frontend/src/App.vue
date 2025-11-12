@@ -10,7 +10,7 @@
         :experiments="experiments"
         :selected-exp-id="selectedExp?.id"
         @create="createExperiment"
-        @select="selectExperiment"
+        @select="handleSelectExperiment"
       />
 
       <ExperimentDetail
@@ -47,14 +47,31 @@ const {
   deleteExperiment
 } = useExperiments();
 
-onMounted(() => loadExperiments());
+onMounted(async () => {
+  await loadExperiments();
+  // Restore previously selected experiment
+  const lastExpId = localStorage.getItem("lastSelectedExp");
+  
+  if (lastExpId && experiments.value.find(e => e.id === parseInt(lastExpId))) {
+    await selectExperiment(parseInt(lastExpId));
+  }
+})
+
 
 const createExperiment = async (name) => {
-  if (await createExp(name)) {
+  const result = await createExp(name);
+  if (result.success) {
     await loadExperiments();
+  } else {
+    alert("❌ " + "Experiment with this name already exist: " + name);
   }
 };
 
+const handleSelectExperiment = async (expId) => {
+  localStorage.setItem("lastSelectedExp", expId);
+  console.log("💾 Saved exp ID:", expId);  // ← Debug
+  await selectExperiment(expId);
+};
 
 </script>
 

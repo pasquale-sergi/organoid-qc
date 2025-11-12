@@ -21,7 +21,7 @@ def init_db():
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS experiments (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
+                name TEXT UNIQUE NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """))
@@ -44,7 +44,7 @@ def init_db():
                 
                 -- Batch tracking
                 imaging_session_id TEXT,
-                microscope_id TEXT,
+                microscope_id TEXT NOT NULL,
                 operator_id TEXT,
                 acquisition_time TIMESTAMP,
                 

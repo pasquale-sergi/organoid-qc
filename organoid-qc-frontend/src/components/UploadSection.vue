@@ -3,18 +3,23 @@
     <h3>📤 Upload Images</h3>
 
     <div class="metadata-fields">
-      <input
-        v-model="metadata.session"
-        type="text"
-        placeholder="Imaging Session ID (optional)"
-      />
-      <input
-        v-model="metadata.microscope"
-        type="text"
-        placeholder="Microscope ID (optional)"
-      />
-      <input
+        <input
+          v-model="metadata.session"
+          @input="saveMetadata"
+          type="text"
+          placeholder="Imaging Session ID"
+          required
+        />
+        <input
+          v-model="metadata.microscope"
+          @input="saveMetadata"
+          type="text"
+          placeholder="Microscope ID"
+          required
+        />
+        <input
         v-model="metadata.operator"
+        @input="saveMetadata"
         type="text"
         placeholder="Operator ID (optional)"
       />
@@ -46,13 +51,11 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
-defineProps({
-  uploading: {
-    type: Boolean,
-    default: false
-  }
+const props = defineProps({
+  uploading: { type: Boolean, default: false },
+  experimentId: { type: Number, required: true }  
 });
 
 const emit = defineEmits(["upload"]);
@@ -62,6 +65,25 @@ const metadata = ref({
   microscope: "",
   operator: ""
 });
+
+const loadMetadata = () => {
+  const key = `exp_${props.experimentId}_metadata`;
+  const saved = localStorage.getItem(key);
+  if (saved) {
+    metadata.value = JSON.parse(saved);
+  } else {
+    metadata.value = { session: "", microscope: "", operator: "" };
+  }
+};
+
+const saveMetadata = () => {
+  const key = `exp_${props.experimentId}_metadata`;
+  localStorage.setItem(key, JSON.stringify(metadata.value));
+};
+
+watch(() => props.experimentId, () => {
+  loadMetadata();
+}, { immediate: true });
 
 const fileInput = ref(null);
 const fileCount = ref(0);
